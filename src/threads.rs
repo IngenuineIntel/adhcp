@@ -5,7 +5,7 @@ use std::{fs, path, process, thread, time};
 use std::io::{self, BufRead, BufReader};
 use std::sync::mpsc;
 
-use crossterm::event::KeyEvent;
+use crossterm::event::{self, Event, KeyCode, KeyEvent};
 
 /* Thread 1: The Collection Thread
  * The collection thread is responsible for sending log and lease
@@ -34,7 +34,7 @@ fn collection_thread(log_sender: mpsc::Sender<String>, lease_sender: mpsc::Sende
 
     loop {
 
-        let mut fd = fs::File::open("/var/lib/dhcpd/dhcpd.leases");
+        let fd = fs::File::open("/var/lib/dhcpd/dhcpd.leases");
 
         let mut cmd = process::Command::new("journalctl")
             .args(&["-fu", "dhcpd", "--no-pager"])
@@ -63,10 +63,24 @@ fn collection_thread(log_sender: mpsc::Sender<String>, lease_sender: mpsc::Sende
  */
 
 pub fn start_input_thread() -> mpsc::Receiver<KeyEvent> {
-    todo!();
+    let (input_sender, input_receiver) = mpsc::channel();
+
+    thread::spawn(move || {
+        input_thread(input_sender);
+    });
+
+    input_receiver
 }
 
 fn input_thread(input_sender: mpsc::Sender<KeyEvent>) {
-    todo!();
+    loop {
+        if event::poll(time::Duration::from_millis(250)).expect("") {
+            if let Ok(Event::Key(key)) = event::read() {
+                if key.kind == event::KeyEventKind::Press {
+                    let _ = input_sender.send(key.clone());
+                }
+            }
+        }
+    }
 }
 

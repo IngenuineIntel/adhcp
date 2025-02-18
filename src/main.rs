@@ -31,14 +31,17 @@ fn main() -> std::io::Result<()> {
     let lease_receiver: Receiver<String>;
     (log_receiver, lease_receiver) = threads::start_collection_thread(); 
 
-    let result = run(&mut terminal, log_receiver, lease_receiver);
+    let input_receiver: Receiver<KeyEvent> = threads::start_input_thread();
+
+    let result = run(&mut terminal, log_receiver, lease_receiver, input_receiver);
     ratatui::restore();
     result
 }
 
 fn run(terminal: &mut ratatui::DefaultTerminal,
     log_receiver: Receiver<String>, 
-    lease_receiver: Receiver<String> 
+    lease_receiver: Receiver<String>,
+    input_receiver: Receiver<KeyEvent>,
     ) -> std::io::Result<()> {
 
     let frame_duration = time::Duration::from_millis(1000/(REFRESH_RATE as u64));
@@ -50,6 +53,12 @@ fn run(terminal: &mut ratatui::DefaultTerminal,
             journal_logs.push(log);
         }
 
+        if let Ok(inputs) = input_receiver.try_recv() {
+            handle_events(inputs);
+        } else {
+            thread::sleep(frame_duration);
+        }
+
         match STATE {
             1 => {
                 terminal.draw(|frame| draw_state_1(frame, journal_logs.clone()))?;
@@ -59,14 +68,11 @@ fn run(terminal: &mut ratatui::DefaultTerminal,
             }
         }
 
-        // if input_receiver.try_recv() {
-        //     handle_inputs();
-        //     do_events();
-        //     continue
-        // } else {
-        thread::sleep(frame_duration);
-        // }
     }
+}
+
+fn handle_events(key: KeyEvent) {
+    todo!();
 }
 
 fn style_default() -> (Style, Style, Style) {

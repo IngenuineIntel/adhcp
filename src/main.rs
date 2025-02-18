@@ -4,6 +4,7 @@
 const VERSION: &'static str = "0.0.1";
 
 use std::sync::mpsc::Receiver;
+use std::vec;
 
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::{
@@ -11,7 +12,7 @@ use ratatui::{
     layout::{Constraint, Layout},
     style::{Color, Modifier, Style, Stylize},
     text::{Line, Span, Text},
-    widgets::{Block, Paragraph},
+    widgets::{Block, Borders, Paragraph},
 };
 
 mod thread;
@@ -35,10 +36,13 @@ fn run(terminal: &mut ratatui::DefaultTerminal,
     lease_receiver: Receiver<String> 
     ) -> std::io::Result<()> {
 
-    
+    let mut journal_logs = vec::Vec::new();
 
     loop {
-        terminal.draw(|frame| draw(frame))?;
+        while let Ok(log) = log_receiver.try_recv() {
+            journal_logs.push(log);
+        }
+        terminal.draw(|frame| draw(frame, journal_logs.clone()))?;
         if handle_events()? {
             break Ok(());
         }
@@ -84,7 +88,7 @@ fn style_matcha() -> (Style, Style, Style) {
     (border_style, title_style, default_text_style)
 }
 
-fn draw(frame: &mut Frame) {
+fn draw(frame: &mut Frame, journal_logs: vec::Vec<String>) {
     use Constraint::{Fill, Length, Min};
 
     let border_style: Style;
@@ -98,16 +102,33 @@ fn draw(frame: &mut Frame) {
 
     let version_nr_size: u16 = (VERSION.chars().count() as u16) + 2;
 
-    let vertical = Layout::vertical([Length(1), Min(0), Length(4)]);
+    let vertical = Layout::vertical([Length(1), Min(0), Length(10)]);
     let [title_area, main_area, status_area] = vertical.areas(frame.area());
     let horizontal = Layout::horizontal([Fill(1); 2]);
     let title_horizontal = Layout::horizontal([Min(0), Length(version_nr_size)]);
     let [left_area, right_area] = horizontal.areas(main_area);
     let [left_title_area, right_title_area] = title_horizontal.areas(title_area);
 
+    let log_entries: Vec<Line> = journal_logs
+        .iter()
+        .rev()
+        .map(|log| {
+            Line::from(Span::styled(format!("{}", log), default_text_style))
+        }).collect();
+
+    frame.render_widget(Paragraph::new(log_entries)
+        .block(
+            Block::default()
+                .title("Logs")
+                .title_style(title_style)
+                .borders(Borders::ALL)
+                .border_style(border_style)
+        ), status_area
+    );
+
     frame.render_widget(Block::bordered().title("Spyre").style(border_style), left_title_area);
     frame.render_widget(Block::bordered().title(VERSION).style(border_style), right_title_area);
-    frame.render_widget(Block::bordered().title("Log").style(border_style), status_area);
+    //frame.render_widget(Block::bordered().title("Log").style(border_style), status_area);
     frame.render_widget(Block::bordered().title("Left").style(border_style), left_area);
     frame.render_widget(Block::bordered().title("Right").style(border_style), right_area);
 }

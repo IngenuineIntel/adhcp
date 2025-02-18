@@ -21,6 +21,9 @@ mod threads;
 static STYLE: u8 = 0;
 const REFRESH_RATE: u8 = 5;
 
+// display state
+static STATE: u8 = 1;
+
 fn main() -> std::io::Result<()> {
     let mut terminal = ratatui::init();
 
@@ -46,7 +49,12 @@ fn run(terminal: &mut ratatui::DefaultTerminal,
         while let Ok(log) = log_receiver.try_recv() {
             journal_logs.push(log);
         }
-        terminal.draw(|frame| draw(frame, journal_logs.clone()))?;
+
+        match STATE {
+            1 => {terminal.draw(|frame| draw_state_1(frame, journal_logs.clone()))?;},
+            _ => {panic!("how...?");},
+        }
+
         if handle_events()? {
             break Ok(());
         }
@@ -102,7 +110,7 @@ fn style_matcha() -> (Style, Style, Style) {
     (border_style, title_style, text_style)
 }
 
-fn draw(frame: &mut Frame, journal_logs: vec::Vec<String>) {
+fn draw_state_1(frame: &mut Frame, journal_logs: vec::Vec<String>) {
     use Constraint::{Fill, Length, Min};
 
     let border_style: Style;

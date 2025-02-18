@@ -5,6 +5,14 @@ use std::{fs, path, process, thread, time};
 use std::io::{self, BufRead, BufReader};
 use std::sync::mpsc;
 
+use crossterm::event::KeyEvent;
+
+/* Thread 1: The Collection Thread
+ * The collection thread is responsible for sending log and lease
+ * information to the main thread. It gets the logs from a
+ * `journalctl` child process, and calculates the leases via TODO.
+ */
+
 pub fn start_collection_thread() -> (mpsc::Receiver<String>, mpsc::Receiver<String>) {
     let (log_sender, log_receiver) = mpsc::channel();
     let (lease_sender, lease_receiver) = mpsc::channel();
@@ -49,5 +57,16 @@ fn collection_thread(log_sender: mpsc::Sender<String>, lease_sender: mpsc::Sende
     }
 }
 
+/* Thread 2: The Input Thread
+ * The input thread is responsible for sending input information to
+ * the main thread. It uses the `crossterm` backend to do so.
+ */
 
+pub fn start_input_thread() -> mpsc::Receiver<KeyEvent> {
+    todo!();
+}
+
+fn input_thread(input_sender: mpsc::Sender<KeyEvent>) {
+    todo!();
+}
 

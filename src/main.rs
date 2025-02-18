@@ -51,36 +51,22 @@ fn run(terminal: &mut ratatui::DefaultTerminal,
         }
 
         match STATE {
-            1 => {terminal.draw(|frame| draw_state_1(frame, journal_logs.clone()))?;},
-            _ => {panic!("how...?");},
+            1 => {
+                terminal.draw(|frame| draw_state_1(frame, journal_logs.clone()))?;
+            }
+            _ => {
+                panic!("how...?");
+            }
         }
 
-        if handle_events()? {
-            break Ok(());
-        }
-        // if events {
+        // if input_receiver.try_recv() {
+        //     handle_inputs();
         //     do_events();
         //     continue
         // } else {
         thread::sleep(frame_duration);
         // }
     }
-}
-
-fn handle_events() -> std::io::Result<bool> {
-    // TODO fix input method to prevent hold
-    /*
-    match event::read()? {
-        Event::Key(key) if key.kind == KeyEventKind::Press => match key.code {
-            KeyCode::Char('q') => return Ok(true),
-            // handle other key events
-            _ => {}
-        },
-        // handle other events
-        _ => {}
-    }
-    */
-    Ok(false)
 }
 
 fn style_default() -> (Style, Style, Style) {

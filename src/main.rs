@@ -4,7 +4,7 @@
 const VERSION: &'static str = "0.0.1";
 
 use std::sync::mpsc::Receiver;
-use std::{thread, time};
+use std::{thread, time, process};
 use std::vec;
 
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
@@ -22,7 +22,7 @@ static STYLE: u8 = 0;
 const REFRESH_RATE: u8 = 5;
 
 // display state
-static STATE: u8 = 1;
+static mut STATE: u8 = 1;
 
 fn main() -> std::io::Result<()> {
     let mut terminal = ratatui::init();
@@ -63,6 +63,9 @@ fn run(terminal: &mut ratatui::DefaultTerminal,
             1 => {
                 terminal.draw(|frame| draw_state_1(frame, journal_logs.clone()))?;
             }
+            0 => {
+                // TODO return
+            }
             _ => {
                 panic!("how...?");
             }
@@ -72,7 +75,10 @@ fn run(terminal: &mut ratatui::DefaultTerminal,
 }
 
 fn handle_events(key: KeyEvent) {
-    todo!();
+    match key.code {
+        KeyCode::Char('q') => {/* TODO */},
+        _ => {},
+    }
 }
 
 fn style_default() -> (Style, Style, Style) {

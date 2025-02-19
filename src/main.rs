@@ -19,7 +19,7 @@ use ratatui::{
 mod threads;
 
 static STYLE: u8 = 0;
-const REFRESH_RATE: u8 = 7;
+const REFRESH_RATE: u8 = 10;
 
 fn main() -> std::io::Result<()> {
     let mut terminal = ratatui::init();
@@ -59,12 +59,16 @@ fn run(terminal: &mut ratatui::DefaultTerminal,
         }
 
         match state {
-            1 => {
-                terminal.draw(|frame| draw_state_1(frame, journal_logs.clone()))?;
-            }
             0 => {
                 return Ok(())
             }
+            1 => {
+                terminal.draw(|frame| draw_state_1(frame, journal_logs.clone()))?;
+            }
+            2 => {
+                terminal.draw(|frame| draw_state_2(frame, journal_logs.clone()))?;
+            }
+
             _ => {
                 panic!("how...?");
             }
@@ -77,6 +81,17 @@ fn handle_events(key: KeyEvent, state: u8) -> u8 {
         KeyCode::Char('q') => {
             return (0 as u8)
         },
+        KeyCode::Tab => {
+            match state {
+                1 => {
+                    return (2 as u8)
+                }
+                2 => {
+                    return (1 as u8)
+                }
+                _ => {}
+            }
+        }
         // TODO
         _ => {},
     }
@@ -109,6 +124,13 @@ fn style_matcha() -> (Style, Style, Style) {
     
     (border_style, title_style, text_style)
 }
+
+/* Codex for states
+ * state = 0: exit
+ * state = 1: multi-view of everything
+ * state = 2: journalctl logs
+ * state = 3: TODO
+ */
 
 fn draw_state_1(frame: &mut Frame, journal_logs: vec::Vec<String>) {
     use Constraint::{Fill, Length, Min};
@@ -151,4 +173,44 @@ fn draw_state_1(frame: &mut Frame, journal_logs: vec::Vec<String>) {
     frame.render_widget(Block::bordered().title(VERSION).style(border_style), right_title_area);
     frame.render_widget(Block::bordered().title("Left").style(border_style), left_area);
     frame.render_widget(Block::bordered().title("Right").style(border_style), right_area);
+}
+
+fn draw_state_2(frame: &mut Frame, journal_logs: vec::Vec<String>) {
+    use Constraint::{Fill, Length, Min};
+
+    let border_style: Style;
+    let title_style: Style;
+    let text_style: Style;
+
+    match STYLE {
+        1 => {(border_style, title_style, text_style) = style_matcha();}
+        _ => {(border_style, title_style, text_style) = style_default();}
+    }
+
+    let version_nr_size: u16 = (VERSION.chars().count() as u16) + 2;
+
+    let [title_area, log_area] = Layout::vertical([Length(1), Min(0)])
+        .areas(frame.area());
+    let [main_title_area, version_title_area] = Layout::horizontal([Min(0), Length(version_nr_size)])
+        .areas(title_area);
+
+    let log_entries: Vec<Line> = journal_logs
+        .iter()
+        .rev()
+        .map(|log| {
+            Line::from(Span::styled(format!("{}", log), text_style))
+        }).collect();
+
+    frame.render_widget(Paragraph::new(log_entries)
+        .block(
+            Block::bordered()
+                .title("Logs")
+                .title_style(title_style)
+                .style(border_style)
+        ), log_area
+    );
+
+    frame.render_widget(Block::bordered().title("Spyre").style(border_style), main_title_area);
+    frame.render_widget(Block::bordered().title(VERSION).style(border_style), version_title_area);
+
 }

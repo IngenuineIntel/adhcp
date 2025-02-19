@@ -19,7 +19,7 @@ use ratatui::{
 mod threads;
 
 static STYLE: u8 = 0;
-const REFRESH_RATE: u8 = 5;
+const REFRESH_RATE: u8 = 7;
 
 fn main() -> std::io::Result<()> {
     let mut terminal = ratatui::init();
@@ -58,8 +58,6 @@ fn run(terminal: &mut ratatui::DefaultTerminal,
             thread::sleep(frame_duration);
         }
 
-        // TODO make this not unsafe
-        unsafe {
         match state {
             1 => {
                 terminal.draw(|frame| draw_state_1(frame, journal_logs.clone()))?;
@@ -71,8 +69,6 @@ fn run(terminal: &mut ratatui::DefaultTerminal,
                 panic!("how...?");
             }
         }
-        }
-
     }
 }
 
@@ -81,6 +77,7 @@ fn handle_events(key: KeyEvent, state: u8) -> u8 {
         KeyCode::Char('q') => {
             return (0 as u8)
         },
+        // TODO
         _ => {},
     }
     state

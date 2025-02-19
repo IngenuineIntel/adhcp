@@ -21,9 +21,6 @@ mod threads;
 static STYLE: u8 = 0;
 const REFRESH_RATE: u8 = 5;
 
-// display state
-static mut STATE: u8 = 1;
-
 fn main() -> std::io::Result<()> {
     let mut terminal = ratatui::init();
 
@@ -44,6 +41,8 @@ fn run(terminal: &mut ratatui::DefaultTerminal,
     input_receiver: Receiver<KeyEvent>,
     ) -> std::io::Result<()> {
 
+    let mut state: u8 = 1;
+
     let frame_duration = time::Duration::from_millis(1000/(REFRESH_RATE as u64));
 
     let mut journal_logs = vec::Vec::new();
@@ -54,31 +53,37 @@ fn run(terminal: &mut ratatui::DefaultTerminal,
         }
 
         if let Ok(inputs) = input_receiver.try_recv() {
-            handle_events(inputs);
+            state = handle_events(inputs, state);
         } else {
             thread::sleep(frame_duration);
         }
 
-        match STATE {
+        // TODO make this not unsafe
+        unsafe {
+        match state {
             1 => {
                 terminal.draw(|frame| draw_state_1(frame, journal_logs.clone()))?;
             }
             0 => {
-                // TODO return
+                return Ok(())
             }
             _ => {
                 panic!("how...?");
             }
         }
+        }
 
     }
 }
 
-fn handle_events(key: KeyEvent) {
+fn handle_events(key: KeyEvent, state: u8) -> u8 {
     match key.code {
-        KeyCode::Char('q') => {/* TODO */},
+        KeyCode::Char('q') => {
+            return (0 as u8)
+        },
         _ => {},
     }
+    state
 }
 
 fn style_default() -> (Style, Style, Style) {

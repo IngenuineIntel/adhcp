@@ -1,3 +1,8 @@
+I HATE RUST SO MUCH DEVELOPMENT IS HALTED
+---
+
+I also no longer have a DHCP server in the home lab, so.
+
 # adhcp
 
 TUI for administrating an ISC-DHCP server on Linux, written in Rust.
